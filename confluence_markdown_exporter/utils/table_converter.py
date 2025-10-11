@@ -56,7 +56,7 @@ def make_empty_cell() -> Tag:
 class TableConverter(MarkdownConverter):
     """Custom MarkdownConverter for converting HTML tables to markdown tables."""
 
-    def convert_table(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
+    def convert_table(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
         rows = [
             cast("list[Tag]", tr.find_all(["td", "th"]))
             for tr in cast("list[Tag]", el.find_all("tr"))
@@ -75,39 +75,45 @@ class TableConverter(MarkdownConverter):
 
         return tabulate(converted, headers=[""] * len(converted[0]), tablefmt="pipe")
 
-    def convert_th(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
+    def convert_th(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
         """This method is empty because we want a No-Op for the <th> tag."""
         # return the html as is
         return text
 
-    def convert_tr(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
+    def convert_tr(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
         """This method is empty because we want a No-Op for the <tr> tag."""
         return text
 
-    def convert_td(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
+    def convert_td(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
         """This method is empty because we want a No-Op for the <td> tag."""
         return text.replace("\n", "<br/>").removesuffix("<br/>").removeprefix("<br/>")
 
-    def convert_thead(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
+    def convert_thead(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
         """This method is empty because we want a No-Op for the <thead> tag."""
         return text
 
-    def convert_tbody(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
+    def convert_tbody(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
         """This method is empty because we want a No-Op for the <tbody> tag."""
         return text
 
-    def convert_ol(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
-        if "td" in parent_tags:
+    def convert_ol(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
+        # Check if we're inside a table cell by looking at parent tags
+        parent_tags = [parent.name for parent in el.parents if parent.name]
+        if "td" in parent_tags or "th" in parent_tags:
             return str(el)
-        return super().convert_ol(el, text, parent_tags)
+        return super().convert_ol(el, text, convert_as_inline)
 
-    def convert_ul(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
-        if "td" in parent_tags:
+    def convert_ul(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
+        # Check if we're inside a table cell by looking at parent tags
+        parent_tags = [parent.name for parent in el.parents if parent.name]
+        if "td" in parent_tags or "th" in parent_tags:
             return str(el)
-        return super().convert_ul(el, text, parent_tags)
+        return super().convert_ul(el, text, convert_as_inline)
 
-    def convert_p(self, el: BeautifulSoup, text: str, parent_tags: list[str]) -> str:
-        md = super().convert_p(el, text, parent_tags)
-        if "td" in parent_tags:
+    def convert_p(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
+        md = super().convert_p(el, text, convert_as_inline)
+        # Check if we're inside a table cell by looking at parent tags
+        parent_tags = [parent.name for parent in el.parents if parent.name]
+        if "td" in parent_tags or "th" in parent_tags:
             md = md.replace("\n", "") + "<br/>"
         return md

@@ -917,8 +917,7 @@ class Page(Document):
 
             path = self._get_path_for_href(attachment.export_path, settings.export.attachment_href)
             el["src"] = path.replace(" ", "%20")
-            if "_inline" in parent_tags:
-                parent_tags.remove("_inline")  # Always show images.
+            # Note: parent_tags manipulation removed as it's handled by parent class
             return super().convert_img(el, text, convert_as_inline)
 
         def convert_drawio(self, el: BeautifulSoup, text: str, convert_as_inline: bool) -> str:
